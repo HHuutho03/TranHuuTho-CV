@@ -34,7 +34,7 @@ jobs:
 
       - name: Rename Resume PDF
         run: |
-          cp fullstack_main.pdf Tran_Huu_Tho_FullStack.pdf
+          cp Tran_Huu_Tho_FullStack.pdf
 
       - name: Compile Cover Letter (XeLaTeX)
         if: hashFiles('cover_letter.tex') != ''
@@ -72,8 +72,6 @@ jobs:
         with:
           name: build-logs
           path: |
-            fullstack_main.log
-            fullstack_main.aux
             cover_letter.log
             cover_letter.aux
             cover_letter_vi.log
