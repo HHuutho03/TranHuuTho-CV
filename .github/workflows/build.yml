@@ -1,0 +1,142 @@
+name: Build LaTeX PDF - Resume & Cover Letter
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Diagnose
+        run: |
+          echo "Triggered on $GITHUB_REF@${GITHUB_SHA}"
+          ls -la *.tex || echo "No .tex files found"
+
+      - name: Compile Resume (XeLaTeX)
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: "Tran_Huu_Tho_Fullstack.tex"
+          latexmk_use_xelatex: true
+          latexmk_shell_escape: true
+          pre_compile: |
+            tlmgr option repository https://mirrors.rit.edu/CTAN/systems/texlive/tlnet
+            tlmgr update --self
+            tlmgr install fontawesome5 fontspec lm babel-english
+
+      - name: Compile Cover Letter EN (XeLaTeX)
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: "cover_letter.tex"
+          latexmk_use_xelatex: true
+          latexmk_shell_escape: true
+          pre_compile: |
+            tlmgr option repository https://mirrors.rit.edu/CTAN/systems/texlive/tlnet
+            tlmgr update --self
+            tlmgr install fontawesome5 fontspec lm babel-english
+
+      - name: Compile Cover Letter VI (XeLaTeX)
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: "cover_letter_vi.tex"
+          latexmk_use_xelatex: true
+          latexmk_shell_escape: true
+          pre_compile: |
+            tlmgr option repository https://mirrors.rit.edu/CTAN/systems/texlive/tlnet
+            tlmgr update --self
+            tlmgr install fontawesome5 fontspec lm babel-english
+
+      - name: List all PDFs
+        run: ls -la *.pdf 2>/dev/null || echo "No PDF files generated"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: resume-and-cover-letter
+          path: |
+            Tran_Huu_Tho_Fullstack.pdf
+            cover_letter.pdf
+            cover_letter_vi.pdf
+          if-no-files-found: warn
+
+      - name: Upload build logs (for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            *.log
+            *.aux
+          if-no-files-found: warn
+
+  release:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: build-pdf
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate changelog
+        run: |
+          set -euo pipefail
+          
+          LAST_TAG=""
+          BUILD_TAGS=$(git tag -l "build-*" 2>/dev/null || true)
+          
+          if [ -n "$BUILD_TAGS" ]; then
+            LAST_TAG=$(echo "$BUILD_TAGS" | sed 's/build-//' | sort -n | tail -1 | sed 's/^/build-/')
+            echo "Found last build tag: ${LAST_TAG}"
+          else
+            echo "No previous build tags found"
+          fi
+          
+          {
+            echo "## Build $(date -u +"%Y-%m-%d %H:%M:%S") UTC"
+            echo ""
+            
+            if [ -n "$LAST_TAG" ]; then
+              COMMIT_RANGE="${LAST_TAG}..HEAD"
+              COMMITS=$(git log "${COMMIT_RANGE}" --no-merges --oneline 2>/dev/null || true)
+              if [ -n "$COMMITS" ]; then
+                git log "${COMMIT_RANGE}" --no-merges --pretty=format:"* **%s** (%h)"
+              else
+                echo "No new commits since ${LAST_TAG}"
+              fi
+            else
+              echo "### Latest Commits"
+              git log --no-merges --pretty=format:"* **%s** (%h)" | head -10
+            fi
+            
+          } > release_notes.md
+          
+          cat release_notes.md
+      
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: resume-and-cover-letter
+          path: dist
+      
+      - name: List artifacts
+        run: ls -la dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          body_path: release_notes.md
+          files: |
+            dist/Tran_Huu_Tho_Fullstack.pdf
+            dist/cover_letter.pdf
+            dist/cover_letter_vi.pdf
