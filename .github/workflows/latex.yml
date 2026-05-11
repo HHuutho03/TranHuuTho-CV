@@ -23,7 +23,7 @@ jobs:
       - name: Compile Resume (XeLaTeX)
         uses: xu-cheng/latex-action@v3
         with:
-          root_file: "main.tex main_vi.tex MBF_main_vi.tex go_devops_main.tex system_main.tex fullstack_main.tex"
+          root_file: "fullstack_main.tex"
           latexmk_use_xelatex: true
           latexmk_shell_escape: true
           extra_system_packages: |
@@ -34,11 +34,6 @@ jobs:
 
       - name: Rename Resume PDF
         run: |
-          cp main.pdf Tran_Huu_Tho_Resume.pdf
-          cp main_vi.pdf Tran_Huu_Tho_Resume_VI.pdf
-          cp MBF_main_vi.pdf Tran_Huu_Tho_Digital_Specialist_VI.pdf
-          cp go_devops_main.pdf Tran_Huu_Tho_Backend_DevOps.pdf
-          cp system_main.pdf Tran_Huu_Tho_System_Engineer.pdf
           cp fullstack_main.pdf Tran_Huu_Tho_FullStack.pdf
 
       - name: Compile Cover Letter (XeLaTeX)
@@ -67,11 +62,6 @@ jobs:
         with:
           name: resume-and-cover-letter
           path: |
-            Tran_Huu_Tho_Resume.pdf
-            Tran_Huu_Tho_Resume_VI.pdf
-            Tran_Huu_Tho_Digital_Specialist_VI.pdf
-            Tran_Huu_Tho_Backend_DevOps.pdf
-            Tran_Huu_Tho_System_Engineer.pdf
             Tran_Huu_Tho_FullStack.pdf
             Tran_Huu_Tho_Cover_Letter.pdf
             Tran_Huu_Tho_Cover_Letter_VI.pdf
@@ -82,16 +72,6 @@ jobs:
         with:
           name: build-logs
           path: |
-            main.log
-            main.aux
-            main_vi.log
-            main_vi.aux
-            MBF_main_vi.log
-            MBF_main_vi.aux
-            go_devops_main.log
-            go_devops_main.aux
-            system_main.log
-            system_main.aux
             fullstack_main.log
             fullstack_main.aux
             cover_letter.log
