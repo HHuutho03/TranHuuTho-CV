@@ -34,9 +34,7 @@ jobs:
 
       - name: Rename Resume PDF
         run: |
-          pwd
-          ls -lah
-          find . -name "*.pdf"
+          cp Tran_Huu_Tho_FullStack.pdf
 
       - name: Compile Cover Letter (XeLaTeX)
         if: hashFiles('cover_letter.tex') != ''
